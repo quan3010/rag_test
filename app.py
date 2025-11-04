@@ -8,7 +8,6 @@ from operator import itemgetter
 
 # Third-party imports
 import streamlit as st
-from dotenv import load_dotenv
 from pymongo import MongoClient
 
 # LangChain imports
