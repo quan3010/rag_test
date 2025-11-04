@@ -201,7 +201,7 @@ st.markdown("""
 
 # Sidebar
 with st.sidebar:
-    st.markdown("### 🤖 AI Chat Assistant in gen-Z slang")
+    st.markdown("### 🤖 AI Chat Assistant in gen-Z slang 2025")
     st.markdown("---")
     
     st.markdown("#### 📊 Session Info")
