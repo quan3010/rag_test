@@ -61,80 +61,10 @@ api_key = "your-langsmith-api-key"
 api_key = "your-google-api-key"
 
 [mongodb]
-uri = "your-mongodb-connection-string"
+uri = "mongodb+srv://user1:user1@cluster0.lqirl.mongodb.net/?retryWrites=true&w=majority"
 ```
 
 
-## 🗄️ MongoDB Setup
-
-1. **Create a MongoDB Atlas cluster**
-- Get Connection string
-2. **Create a database** named `demo_vector_db`
-3. **Create a collection** named `reviews`
-```python
-mongo_uri = "mongodb+srv://<username>:<password>@<cluster-name>.mongodb.net/?retryWrites=true&w=majority"
-client = MongoClient(mongo_uri)
-database = client['demo_vector_db']
-collection = database['reviews']
-```
-4. **Insert sample documents** into the collection:
-
-```python
-# Sample documents structure
-documents = [
-    {
-        '_id': 1,
-        'product': 'coffee',
-        'text': 'This coffee is amazing! Best latte I have ever had.'
-    },
-    {
-        '_id': 2,
-        'product': 'coffee',
-        'text': 'Espresso had a strong flavor but the aftertaste was harsh.'
-    },
-    {
-        '_id': 3,
-        'product': 'tea',
-        'text': 'The green tea was refreshing and had a nice aroma.'
-    }
-]
-
-# Insert into MongoDB
-collection.insert_many(documents)
-```
-
-5. **Generate embeddings** for all documents:
-
-```python
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-
-# Initialize embeddings model
-embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
-
-# Create embedding for all documents in the collection
-docs = collection.find({})
-for doc in docs:
-    text = doc['text']
-    vector = embeddings.embed_query(text)
-    collection.update_one({'_id': doc['_id']}, {'$set': {'embedding': vector}})
-```
-
-6. **Create a vector search index** named `vector_index_1` with the following configuration:
-
-```json
-{
-  "fields": [
-    {
-      "type": "vector",
-      "path": "embedding",
-      "numDimensions": 3072,
-      "similarity": "cosine"
-    }
-  ]
-}
-```
-
-**Note**: The `gemini-embedding-001` model generates embeddings with 3072 dimensions.
 
 ## 🎯 Usage
 
