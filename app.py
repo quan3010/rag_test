@@ -35,8 +35,8 @@ def get_mongodb_collection():
     """Connect to MongoDB and return collection (cached)."""
     MONGODB_URI = os.environ['MONGO_URI']
     client = MongoClient(MONGODB_URI)
-    database = client['demo_vector_db']
-    return database['reviews']
+    database = client['demo_vector_db'] #replace it with your own database
+    return database['reviews'] #replace it with your own collection
 
 @st.cache_resource
 def get_embeddings_and_llm():
@@ -54,7 +54,8 @@ def get_retriever():
     vector_store = MongoDBAtlasVectorSearch(
         collection=collection,
         embedding=embeddings,
-        index_name="vector_index_1",
+        text_key="text", #replace this with your field name of the reviews
+        index_name="vector_index_1", #replace it with your own
         relevance_score_fn="cosine"
     )
     return vector_store.as_retriever()
