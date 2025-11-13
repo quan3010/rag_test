@@ -44,7 +44,9 @@ cd rag_test
 
 2. **Install dependencies**
 ```bash
+conda create --name demo python=3.12
 pip install -r requirements.txt
+conda activate demo
 ```
 
 3. **Set up Streamlit secrets**
