@@ -42,16 +42,13 @@ git clone https://github.com/quan3010/rag_test
 cd rag_test
 ```
 
-2. **Install dependencies**
-```bash
-pip install -r requirements.txt
-```
-
-3. **Set up Streamlit secrets**
+2. **Set up Streamlit secrets**
 
 Create a `.streamlit/secrets.toml` file with the following structure and **replace your API keys** accordingly:
 
-```toml
+```bash
+mkdir -p .streamlit
+cat > .streamlit/secrets.toml << 'EOF'
 [langsmith]
 tracing = "true"
 endpoint = "https://api.smith.langchain.com"
@@ -61,16 +58,21 @@ api_key = "your-langsmith-api-key"
 api_key = "your-google-api-key"
 
 [mongodb]
-uri = "mongodb+srv://user1:user1@cluster0.lqirl.mongodb.net/?retryWrites=true&w=majority"
+uri = "your-mongodb-connection-string"
+EOF
+
 ```
 
-
+3. **Install dependencies**
+```bash
+pip install uv
+```
 
 ## 🎯 Usage
 
 1. **Run the Streamlit app**
 ```bash
-streamlit run app.py
+uv run streamlit run app.py
 ```
 
 2. **Open your browser** to `http://localhost:8501`
