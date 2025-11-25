@@ -3,6 +3,7 @@ MongoDB Vector Search Chatbot with LangChain and Streamlit
 """
 
 # Standard library imports
+from itertools import chain
 import os
 from operator import itemgetter
 
@@ -20,7 +21,8 @@ from langchain_mongodb import MongoDBAtlasVectorSearch
 
 # Load environment variables
 # LangSmith / LangChain
-os.environ["LANGCHAIN_TRACING_V2"] = st.secrets["langsmith"]["tracing"]
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+
 os.environ["LANGCHAIN_ENDPOINT"] = st.secrets["langsmith"]["endpoint"]
 os.environ["LANGCHAIN_API_KEY"] = st.secrets["langsmith"]["api_key"]
 
@@ -28,7 +30,16 @@ os.environ["LANGCHAIN_API_KEY"] = st.secrets["langsmith"]["api_key"]
 os.environ["GOOGLE_API_KEY"] = st.secrets["google"]["api_key"]
 
 # Mongo
-os.environ["MONGO_URI"] = st.secrets["mongodb"]["uri"]
+# Mongo
+# Prefer env vars (for click) but fall back to st.secrets if present
+mongo_uri = os.getenv("MONGO_URI")
+
+if not mongo_uri:
+    # Fallback to Streamlit secrets (e.g., when deployed)
+    mongo_uri = st.secrets["mongodb"]["uri"]
+
+os.environ["MONGO_URI"] = mongo_uri
+
 
 @st.cache_resource
 def get_mongodb_collection():
@@ -54,10 +65,11 @@ def get_retriever():
     vector_store = MongoDBAtlasVectorSearch(
         collection=collection,
         embedding=embeddings,
-        index_name="vector_index_1",
+        text_key="text",
+        index_name="vector_index",
         relevance_score_fn="cosine"
     )
-    return vector_store.as_retriever()
+    return vector_store.as_retriever(search_kwargs={"k": 2})
 
 # Initialize cached resources
 collection = get_mongodb_collection()
@@ -236,41 +248,42 @@ st.title("🤖 AI Chat Assistant")
 st.markdown("### Ask me anything!")
 st.markdown("---")
 
+template = """You are a helpful customer assistant to help with orders. 
+Answer the following questions considering the history and
+the context of your restaurant. 
+Use emojis where appropriate.
+If you don't know the answer, just say you don't know.
+Do not make up answers.
+
+Chat history:
+{chat_history}
+
+Context of your restaurant:
+{context}
+
+User question:
+{question}
+"""
+
+prompt = ChatPromptTemplate.from_template(template)
+
+chain = (
+    {
+        "context": itemgetter("question") | retriever | format_docs,
+        "question": itemgetter("question"),
+        "chat_history": itemgetter("chat_history"),
+    }
+    | prompt
+    | llm
+    | StrOutputParser()
+)
 
 def get_response(user_query, chat_history):
-    
-    template = """You are a helpful customer assistant to help with orders. 
-    Answer the following questions considering the history and
-    the context of your restaurant. User gen-z slang here and there.
-    Use emojis where appropriate.
-    If you don't know the answer, just say you don't know.
-    Do not make up answers.
-    Ask follow-up questions to have customers order more items.
-    Once done, confirm the order summary and total price.
-    Ask how they would like to pay and provide payment options.
-
-    Chat history: {chat_history}
-    Context of your restaurant: {context}
-    User question: {question}
-    """
-    
-    prompt = ChatPromptTemplate.from_template(template)
-    
-    chain = (
-        {
-            "context": itemgetter("question") | retriever | format_docs,
-            "question": itemgetter("question"),
-            "chat_history": itemgetter("chat_history"),
-        }
-        | prompt
-        | llm
-        | StrOutputParser()
-    )
-    
     return chain.stream({
-        "chat_history": chat_history,
+        "chat_history": chat_history,   # ← full history
         "question": user_query,
     })
+
 
 # Initialize session state
 if "chat_history" not in st.session_state:
